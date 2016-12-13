@@ -18,6 +18,10 @@ void *thread_send();
 void *thread_recv();
 void Send_Recv(void);
 void get_sz_buffer(uint8_t *sp, uint8_t *buffer);
+void kill_program(void);
+int getNum(uint8_t* s);
+void *thread_first(void * arg);
+void *thread_C();
 
 
 

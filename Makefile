@@ -1,10 +1,10 @@
 obj = client_hf.o commend.o 3des.o getIp.o pro_Key.o mac.o serial_poll.o com_RW.o
 #CC = gcc
 CC = arm-linux-gcc
-all: gataway clean
+all: second_program first_program clean
 
-gataway: $(obj)
-	$(CC) -o gataway $(obj) -lpthread
+second_program: $(obj)
+	$(CC) -o second_program $(obj) -lpthread
 
 client_hf.o : client_hf.c client_hf.h config.h print.h
 	$(CC) -c client_hf.c -lpthread
@@ -29,9 +29,12 @@ com_RW.o : com_RW.c com_RW.h config.h print.h
 
 mac.o : mac.c mac.h config.h
 	$(CC) -c mac.c
-
+	
+first_program:
+	$(CC) -o first_program first_program.c
+	
 .PHONY:clean
 clean:
 	rm $(obj)
-	cp gataway /mnt/hgfs/share/
-	rm gataway
+	cp second_program first_program /mnt/hgfs/share/
+	rm second_program first_program
