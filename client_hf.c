@@ -4,11 +4,12 @@ ssize_t n;
 int sockfd;
 int TotalNum = 0; //总的空开数量
 uint8_t TotalNum_buf[2] = {0};
-
+int poll_flag = 0;
 static uint8_t flag[5] = {0};
 static uint8_t buf[N] = {0};
-uint8_t getip[16] = {0};
-uint8_t* getip_sp = getip;
+char *getip = NULL;
+const char* ip_1 = "192.168.1.233";
+const char* ip_2 = "127.0.0.1";
 
 int getNum(uint8_t* s){
 	if(!strcmp(s,"0021")) return 1;
@@ -71,6 +72,7 @@ void *thread_first(void * arg) {
 				case 2://设置时间时,接收服务器的消息,setTime,"0022"
 				setTime(decryption_buff);
 				printf("==========End of registration==========\n\n");
+				++poll_flag;
 				break;
 				
 				case 3://读取单路空开设备,Read_a_single_device,"0023"
@@ -130,21 +132,25 @@ int main(int argc, const char *argv[]) {
 	uint8_t Mac[17] = {0};
 	uint8_t buf2[256] = {0};
 	int i = 0, nbyte;
-	
+	int a = 0, b = 0, c = 0;
 	int nRtn = get_mac(Mac, sizeof(Mac));  //获取Mac地址
 	LOG_PRINT("Mac: %s\n", Mac);
+
+	getip = (char *)GetLocalIp(); //获取IP地址
+	a = Strcmp(getip, ip_1);
+	b = Strcmp(getip, ip_2);
 	
-	do {
-		getip_sp = (uint8_t *)GetLocalIp(); //获取IP地址
-		if(!(strcmp("192.168.1.233", getip_sp))) {
-			printf("getIp failed; retry times %d\n", i);
-			i++;
-			if(i == 6)system("udhcpc");
-			sleep(1);
-		} else {
-			LOG_PRINT("Get IP succeed:%s\n\n", getip_sp);
-		}
-	} while(!(strcmp("192.168.1.233", getip_sp)));
+GITIP:if((!a)||(!b)||(*getip > '3')){
+		i++;
+		sleep(1);
+		printf("getIp failed; retry times %d\n", i);
+		getip = (char *)GetLocalIp(); //获取IP地址
+		a = Strcmp(getip, ip_1);
+		b = Strcmp(getip, ip_2);
+//		printf("a:%d b:%d\n", a, b);
+		goto GITIP;
+	}
+	LOG_PRINT("Get IP succeed:%s\n\n", getip);
 	
 	printf("==========Start of registration==========\n");
 	
@@ -186,12 +192,13 @@ int main(int argc, const char *argv[]) {
 		exit(1);
 	}else
 	bzero(encryption_buff, sizeof(encryption_buff));	//清除加密data
-
-	sleep(2);
-//	pthread_mutex_lock(&poll);
+loop: if(poll_flag <= 0){
+		sleep(1);
+		printf("wait poll...\n");
+		goto loop;
+	}
 	Gateway_Poll();
-///	pthread_mutex_unlock(&poll);
-	
+
 	pthread_join(thread_reg, NULL);
 	close(sockfd);
 
